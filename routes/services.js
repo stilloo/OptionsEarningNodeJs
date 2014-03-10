@@ -92,32 +92,36 @@ exports.getPnL  = function(req, res) {
        req.on('end', function () {
         // Assuming, we're receiving JSON, parse the string into a JSON object to return.
         data = JSON.parse(content);
-        console.log(data.options.length);
-        for(var i=0;i<data.options.length;i++){
-         var opt = data.options[i].option;
-         stockPrice = opt.stockPrice;
+        //console.log(data.options.length);
+        //for(var i=0;i<data.options.length;i++){
+         //var opt = data.options[i].option;
+          var opt=data;
+         stockPrice = +opt.stockPrice;
          var ticker = opt.ticker;
-         var strike = opt.strike;
-         var price = opt.price;
-         var type = opt.type;
-         var expiryDate=opt.expiryDate;
-         var transactionType = opt.transactionType;
-         var contracts = opt.contracts;
+         var strike = +opt.strike_1;
+         var price = +opt.premium_1;
+         var type = opt.type_1;
+         var expiryDate=opt.expiration_1;
+         var transactionType = opt.transaction_1;
+         var contracts = +opt.contracts_1;
          if(strike < minStrike)
             minStrike=strike;
-	 if(strike > maxStrike)
-	    maxStrike=strike;
+	      if(strike > maxStrike)
+	        maxStrike=strike;
          //populate object
          optionModelList.push(new OptionsModel(ticker,strike,price,type,expiryDate,transactionType,contracts));
          console.log(ticker);
-        }
+        //}
         
         //ok option model has the list of objects now
        
         if(maxStrike < stockPrice) maxStrike=stockPrice;
         //ok lets calculate profit
         var minPrice = minStrike/2;
-        var maxPrice = maxStrike  + minPrice;
+        console.log("minPrice "+minPrice);
+        console.log("maxStrike "+maxStrike);
+        var maxPrice = +maxStrike + +minPrice;
+        console.log("maxPrice "+maxPrice);
         var max=0,min=0;
 
         console.log(minPrice);
@@ -130,8 +134,17 @@ exports.getPnL  = function(req, res) {
             if(pnl > max) max = pnl;
 
         }
-        console.log(pnlProfitLossMap);
-        res.send({"options":pnlProfitLossMap});
+      //  console.log(pnlProfitLossMap);
+        var responseArr = [];
+        for (var key in pnlProfitLossMap) {
+          var value = pnlProfitLossMap[key];
+          var rowArr = new Array();
+          rowArr.push(key);
+          rowArr.push(value);
+          responseArr.push(rowArr);
+        }
+        console.log(responseArr);
+        res.send(responseArr);
       });
  
  };
@@ -149,7 +162,7 @@ function populateModelToPlot(stockPriceAtExpiration)
 
     //System.out.println("Sum is "+sum);
     //console.log("Adding ["+stockPriceAtExpiration+"] , "+sum);
-    pnlProfitLossMap[stockPriceAtExpiration]=sum;
+    pnlProfitLossMap[stockPriceAtExpiration]=Math.floor(sum);
     return sum;
 }
 
@@ -166,14 +179,14 @@ function calculatePnL(stockPriceAtExpiration)
         if(model.optionType == "C" && model.transactionType == "BUY")
             {
                 //ok its call option
-                var profitableStockPrice = model.strikePrice + model.optionPremium;
+                var profitableStockPrice = model.strikePrice + +model.optionPremium;
 
                 if(stockPriceAtExpiration < profitableStockPrice)
                 {
                     if(stockPriceAtExpiration < model.strikePrice)
                     {
                         //max loss is option premium
-                        pnl = model.optionPremium*100;
+                        pnl = +model.optionPremium*100;
                     }
                     else
                     {

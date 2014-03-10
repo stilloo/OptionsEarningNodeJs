@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 
-<link href="/public/stylesheets/bootstrap.css" rel="stylesheet">
-   
-<link href="/public/stylesheets/bootstrap-responsive.css" rel="stylesheet">
+<link href="/public/stylesheets/bootstrap-3.1.1-dist/css/bootstrap.css" rel="stylesheet">
+<style type="text/css">
 
+</style>
 <html>
 <script src="/public/javascripts/jquery-1.7.1.js"></script>
+<script src="/public/javascripts/dygraph-combined.js"></script>
+
 <script type="text/javascript"> 
 
   jQuery.extend({
         postJSON: function(params) {
             return jQuery.ajax(jQuery.extend(params, {
                 type: "POST",
-                data: JSON.stringify(params.data),
+                data: params.data,
                 dataType: "json",
                 contentType: "application/json",
                 processData: false
@@ -21,10 +23,25 @@
     });
   
 
-
+ $.fn.serializeObject = function()
+ {
+    var o = {};
+    var a = this.serializeArray();
+    $.each(a, function() {
+        if (o[this.name] !== undefined) {
+            if (!o[this.name].push) {
+                o[this.name] = [o[this.name]];
+            }
+            o[this.name].push(this.value || '');
+        } else {
+            o[this.name] = this.value || '';
+        }
+    });
+    return o;
+ };
 
   jQuery(document).on('ready', function() {
-        $('form#optionform').on('submit', function(event) {
+        $('#gobutton').click(function(event) {
           event.preventDefault();
           console.log("came here");
           console.log($('#ticker').val());
@@ -59,6 +76,64 @@
         });
         return true;
     });
+  
+    var strikePremium = {};
+
+    $('#expiration_1').change(function() 
+    {
+       //alert('Value change to ' + $(this).attr('value'));
+        $.getJSON( "http://localhost:8080/getOptionChain/"+$('#ticker').val()+"/"+$(this).attr('value'), function( data ) {
+            console.log(data);
+            strikePremium = {};
+            $(data.chain.optionsChain.option).each(function()
+            {
+               //this refers to the current item being iterated over
+               if($('#type_1').val() == this.type)
+               {
+                  var option = $('<option />');
+                  option.attr('value', this.strikePrice).text(this.strikePrice);
+                  $('#strike_1').append(option);
+               }
+               strikePremium[this.type+this.strikePrice] = this.lastPrice; 
+             
+           });  
+        });
+    });
+
+     $('#strike_1').change(function() 
+    {
+      var premium = strikePremium[$('#type_1').val()+$(this).attr('value')];
+      $('#premium_1').val(premium);   
+    });
+
+    $('#subbtn').click(function(event) {
+          event.preventDefault();
+           var formdata = JSON.stringify($('form').serializeObject());
+           console.log(formdata);
+           $.postJSON({
+                url: 'http://localhost:8080/getPnL',
+                data: formdata,
+                success: function(json) {
+                    console.log(json);
+                    //alert(JSON.stringify(json));
+                    var g = new Dygraph(document.getElementById("graph"),
+                 // For possible data formats, see http://dygraphs.com/data.html
+                 json,
+                 {
+                     // options go here. See http://dygraphs.com/options.html
+                     legend: 'always',
+                     animatedZooms: true,
+                     title: 'P&L Chart',
+                     ylabel: 'Profit',
+                     xlabel: 'Stock at Expiration'
+                 });
+                },
+                error: function(err) {
+                    alert(err.responseText);
+                }
+            });
+    });
+
 });
 </script>
 <body>
@@ -68,140 +143,82 @@
 	</div>
 <form class="form-inline" id="optionform">
 
-  <div id="POItablediv" align="center" class="span8">
   <div class="row">
-  <div class="offset0" align="left">
- <!--<h3> Welcome  </h3> -->
-  </div>
-  </div>
-  <div class="row">
-  <div class="span4 offset4" align="center">
+  <div class="span5 offset4" align="center">
    <br>
-        <b>Ticker :</b> <input type="text" size="5" class="span1" name="ticker" id="ticker" value="" > 
-  	<input type="submit" value="Go" id="gobutton" class="btn-mini btn-primary">
-  	
+     <b>Ticker :</b> <input type="text" size="5" class="span1" name="ticker" id="ticker" value="" > 
+  	 <input type="submit" value="Go" id="gobutton" class="btn-mini btn-primary">
+     <img src="/public/images/clear.gif"   width="30">
+     <label class="control-label"><b>Stock Price :</b></label>
+  	 <input type="text" id="stockPrice"   value="" name="stockPrice" class="span1" size="10"> 
+     <img src="/public/images/refresh.gif" alt="Refresh" height="15" width="10" onclick="Change_Cursor('');queryYQL()"/>   
   </div>
-  	
-  	</div>
+  </div>
   	<br/>
   	<div class="row">
-  	<div class="span6 offset3">
- 			<label class="control-label"><b>Stock Price :</b></label>
-
-  			<input type="text" id="stockPrice"   value="" name="stockPrice" class="span1" size="10"> 
-  			<img src="/public/images/refresh.gif" alt="Refresh" height="15" width="10" onclick="Change_Cursor('');queryYQL()"/>
-			<img src="/public/images/clear.gif"   width="30">
-			<label class="control-label"><b>Expiration :</b></label>
-  			<select class="span2" name="expiration_1" id="expiration_1"  onchange="Change_Cursor('');queryYQL2();"><option>--</option></select>
-  			<img src="/public/images/refresh.gif" alt="Refresh" height="15" width="10" onclick="Change_Cursor('');queryYQL1()"/>
-  	</div>
-  	 </div>
-  	 <br/>
+      <div class="col-xs-12 col-sm-8 col-md-6 col-sm-offset-2 col-md-offset-3" align="center">
+      <table class="table">
+      <tr>
+         <td><b>Order Type</b></td>
+         <td><b>Contracts</b></td>
+         <td><b>Type</b></td> 
+         <td><b>Expiration</b></td>
+         <td><b>Strike</b></td>
+         <td><b>Premium</b></td>
+         <td></td>
+      </tr>
+      <tr>
+        <td><select width="100%" name="transaction_1" id="transaction_1" class="order-type" tabindex="6"><option value="">- -</option><option value="BUY">Buy</option><option value="SELL">Sell</option></select></td>
+          <td>
+            <input type="text"  value="" name="contracts_1" id="contracts_1" style="width:100%;height:100%"> 
+          </td>
+        
+        <td><select width="100%" class="type osi-option-type" name="type_1"  id="type_1" tabindex="8"><option>- -</option><option value="C">Call</option><option value="P">Put</option></select></td>
+        <td><select name="expiration_1" id="expiration_1" class="expiration" tabindex="9"><option value="">-------</option></select></td>
+        <td><select width="100%" name="strike_1" id="strike_1" class="strike" tabindex="4"><option value="">-----</option></td>
+        <td>
+          <input type="text" value="" name="premium_1" id="premium_1" style="width:100%;height:100%">
+        </td>
+        <td>
+          <input class="btn-mini btn-primary" type="button" id="addmorePOIbutton" value="Add"  onclick="insRow()"/>
+        </td>
+      </tr>
+     </table>
+     </div>
+    </div>
+    
+   
+     <!--
   	 <div class="row">
   	<div class="span3 offset3" align="center">
-    <table id="POITable" style="display:none"   border="0">
-    	<thead>
-        <tr>
-        	<th><label class="control-label"><b>Buy/Sell</b></label></th>
-            <th><label class="control-label"><b>Contracts</b></label></th>
-            <th><label class="control-label"><b>Type</b></label></th>
-            <th colspan="2"><label class="control-label"><b>Strike</b></label></th>
-        	<th colspan="2"><label class="control-label"><b>Premium</b></label></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-        	<td><select class="span2" id="longshort_1" name="longshort_1" "><option value="--">--</option><option value="BUY">Buy</option><option value="SELL">Sell</option></select></td>
-            <td><input size=5  class="span1" type="text" name="contracts_1" id="contracts_1" /></td>
-            <td><select class="span2" id="type_1" name="type_1" onchange="Change_Cursor('');queryYQL3(this)"><option value="--" >--</option><option value="C">CALL</option><option value="P">PUT</option></select></td>
-	        <td><select class="span2" name="strike_1" id="strike_1"  onchange="Change_Cursor('');queryYQL3(this)"><option value="--">--</option></select></td>
-	        <td valign="top"><img src="/public/images/refresh.gif" alt="Refresh" height="15" width="10" onclick="Change_Cursor('');queryYQL2Refresh(this)"/> </td>
-            <td><input class="span1" size=10 type="text" name="premium_1" id="premium_1" /></td>
-		    <td valign="top"><img src="/public/images/refresh.gif" alt="Refresh" height="15" width="10" onclick="Change_Cursor('');queryYQL3(this)"/></td>
-        	
-            <td><input type="button" class="btn-mini btn-danger" id="delPOIbutton" value="Delete" onclick="deleteRow(this)"/></td>
-           
-        </tr>
-        
-         </tbody>
-    </table>
+        	  <input size=5  class="span1" type="text" name="contracts_1" id="contracts_1" />
+            <select class="span2" id="type_1" name="type_1" onchange="Change_Cursor('');queryYQL3(this)"><option value="--" >--</option><option value="C">CALL</option><option value="P">PUT</option></select>
+            <select class="span2" name="strike_1" id="strike_1"  onchange="Change_Cursor('');queryYQL3(this)"><option value="--">--</option></select>
+            <img src="/public/images/refresh.gif" alt="Refresh" height="15" width="10" onclick="Change_Cursor('');queryYQL2Refresh(this)"/> 
+            <input class="span1" size=10 type="text" name="premium_1" id="premium_1" /></td>
+           <img src="/public/images/refresh.gif" alt="Refresh" height="15" width="10" onclick="Change_Cursor('');queryYQL3(this)"/>
+          <select class="span2" id="longshort_1" name="longshort_1" "><option value="--">--</option><option value="BUY">Buy</option><option value="SELL">Sell</option></select>
+        	<select class="span2" name="expiration_1" id="expiration_1"  onchange="Change_Cursor('');queryYQL2();"><option>--</option></select>
+        <img src="/public/images/refresh.gif" alt="Refresh" height="15" width="10" onclick="Change_Cursor('');queryYQL1()"/>
+            <input type="button" class="btn-mini btn-danger" id="delPOIbutton" value="Delete" onclick="deleteRow(this)"/>
     </div>
      </div>
-      <div class="row">
-      	<div class="offset4" align="right">
-    <table id="addrw" style="display:none" >
-     <tr>
-      		 <td>
-      		 <input class="btn-mini btn-primary" type="button" id="addmorePOIbutton" value="Add" onclick="insRow()" style="margin-left: 450px;"/>
-      		 </td>
-        </tr>
-    
-    </table>
-    </div>
-    </div>
-     <div class="row">
-     <div class="offset3" align="right">
-     <table id ="cmptable" style="display:none" >
-     <tr>
-    
-       <td>
-       <label class="checkbox" for="mylabel" id="cmpre">
-       <input type="checkbox" name="compare" id="compare" value="compare" onclick="setTable()"> Click Here to add and compare positions </label>
-       </td>
-     </tr>
-    
-    </table>
-    </div>
-    </div>
+   -->
+   
     <div class="row">
-    <div class="span3 offset3" align="center">
-     <table id="POITable1" border="0" style="display:none">
-    	<tbody>
-       
-        <tr>
-        	<td><select class="span2"id="longshort_1c" name="longshort_1c"><option value="--">--</option><option value="BUY">Buy</option><option value="SELL">Sell</option></select></td>
-            <td><input class="span1" size=5 type="text" name="contracts_1c" id="contracts_1c" /></td>
-            <td><select class="span2" id="type_1c" name="type_1c" onchange="Change_Cursor('');queryYQL3(this)"><option value="--" >--</option><option value="C">CALL</option><option value="P">PUT</option></select></td>
-	        <td><select class="span2" name="strike_1c" id="strike_1c"  onchange="Change_Cursor('');queryYQL3(this)"><option value="--">--</option></select></td>
-	        <td valign="top"><img src="/public/images/refresh.gif" alt="Refresh" height="15" width="10" onclick="Change_Cursor('');queryYQL2Refresh(this)"/> </td>
-            <td><input size=10 class="span1" type="text" name="premium_1c" id="premium_1c" /></td>
-        	<td valign="top"><img src="/public/images/refresh.gif" alt="Refresh" height="15" width="10" onclick="Change_Cursor('');queryYQL3(this)"/></td>
-            <td><input type="button" class="btn-mini btn-danger" id="delPOIbutton" value="Delete" onclick="deleteRowCompare(this)"/></td>
-           
-        </tr>
-        
-         </tbody>
-    </table>
-    </div>
-    </div>
-     <div class="row">
-     <div class="offset4" align="right">
-     <table id ="POITable1Add" style="display:none">
-     <tr>
-      		 <td><input type="button" class="btn-mini btn-primary" id="addmorePOIbuttonCompare" value="Add" onclick="insRowCompare()" style="margin-left: 450px;"/></td>
-        </tr>
-    
-    </table>
-    </div>
-    </div>
-    
-    <br/>
-     <br/>
-
-     
-     <br/>
-        
-     <div class="offset4" align="center">   
-       <button style="display:none" id="subbtn" type="submit" onclick="document.getElementById('savepos').value='false';" class="btn btn-primary">Submit</button>
-       
+      <div class="col-xs-12 col-sm-8 col-md-6 col-sm-offset-2 col-md-offset-3" align="center">
+       <button id="subbtn" type="submit"  class="btn btn-primary">Submit</button>
        <input type="hidden" id="savepos" name="savepos" value="false"/>
-       
-         <button style="display:none" id="savebtn" type="submit" class="btn btn-primary" onclick="document.getElementById('savepos').value='true';">Save Position</button>
-     </div>
-     <input type="hidden" id="POITableCount" name="POITableCount" value="1"/>
-     <input type="hidden" id="POITable1Count" name="POITable1Count" value="0"/>
-     
-  </div>
+       <button  id="savebtn" type="submit" class="btn btn-primary" onclick="document.getElementById('savepos').value='true';">Save Position</button>
+       </div>
+    </div>
+    <br/>
+    <br/>
+   <div class="row"> 
+      <div class="col-md-6 col-lg-6 col-md-offset-3" align="center">
+         <div id="graph"></div>
+      </div>
+    </div> 
   <!--
     <div id="positionsdiv" class="offset12" >
     <b> Positions</b>
