@@ -79,6 +79,8 @@ exports.getPnL  = function(req, res) {
  *   }
  * }
  */
+    pnlProfitLossMap = {};
+    optionModelList = new Array();
     var content = '';
     var stockPrice=0;
     var minStrike=100000;
