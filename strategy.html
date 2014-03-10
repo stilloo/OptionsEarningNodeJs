@@ -45,7 +45,7 @@
           event.preventDefault();
           console.log("came here");
           console.log($('#ticker').val());
-          $.getJSON( "http://localhost:8080/getTimeFrames/"+$('#ticker').val(), function( data ) {
+          $.getJSON( "getTimeFrames/"+$('#ticker').val(), function( data ) {
             //now populate expiration with this data
             $(data.expirations.option).each(function()
             {
@@ -70,7 +70,7 @@
             */
            // return true;
         });
-           $.getJSON( "http://localhost:8080/getStockPrice/"+$('#ticker').val(), function( data ) {
+           $.getJSON( "getStockPrice/"+$('#ticker').val(), function( data ) {
             console.log(data);
             $('#stockPrice').val(data.stockPrice);    
         });
@@ -82,7 +82,7 @@
     $('#expiration_1').change(function() 
     {
        //alert('Value change to ' + $(this).attr('value'));
-        $.getJSON( "http://localhost:8080/getOptionChain/"+$('#ticker').val()+"/"+$(this).attr('value'), function( data ) {
+        $.getJSON( "getOptionChain/"+$('#ticker').val()+"/"+$(this).attr('value'), function( data ) {
             console.log(data);
             strikePremium = {};
             $(data.chain.optionsChain.option).each(function()
@@ -111,7 +111,7 @@
            var formdata = JSON.stringify($('form').serializeObject());
            console.log(formdata);
            $.postJSON({
-                url: 'http://localhost:8080/getPnL',
+                url: 'getPnL',
                 data: formdata,
                 success: function(json) {
                     console.log(json);
