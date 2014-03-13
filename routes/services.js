@@ -100,12 +100,12 @@ exports.getPnL  = function(req, res) {
           var opt=data;
          stockPrice = +opt.stockPrice;
          var ticker = opt.ticker;
-         var strike = +opt.strike_1;
-         var price = +opt.premium_1;
-         var type = opt.type_1;
-         var expiryDate=opt.expiration_1;
-         var transactionType = opt.transaction_1;
-         var contracts = +opt.contracts_1;
+         var strike = +opt.strike_0;
+         var price = +opt.premium_0;
+         var type = opt.type_0;
+         var expiryDate=opt.expiration_0;
+         var transactionType = opt.transaction_0;
+         var contracts = +opt.contracts_0;
          if(strike < minStrike)
             minStrike=strike;
 	      if(strike > maxStrike)

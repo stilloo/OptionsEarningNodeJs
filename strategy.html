@@ -40,6 +40,8 @@
     return o;
  };
 
+  var expirationsArray = new Array();
+
   jQuery(document).on('ready', function() {
         $('#gobutton').click(function(event) {
           event.preventDefault();
@@ -52,7 +54,8 @@
                   //this refers to the current item being iterated over
                  var option = $('<option />');
                  option.attr('value', this.contract).text(this.contract);
-                 $('#expiration_1').append(option);
+                 expirationsArray.push(this.contract);
+                 $('#expiration_0').append(option);
            });
 
            
@@ -79,7 +82,7 @@
   
     var strikePremium = {};
 
-    $('#expiration_1').change(function() 
+    $('.expiration').change(function() 
     {
        //alert('Value change to ' + $(this).attr('value'));
         $.getJSON( "getOptionChain/"+$('#ticker').val()+"/"+$(this).attr('value'), function( data ) {
@@ -88,11 +91,11 @@
             $(data.chain.optionsChain.option).each(function()
             {
                //this refers to the current item being iterated over
-               if($('#type_1').val() == this.type)
+               if($('#type_0').val() == this.type)
                {
                   var option = $('<option />');
                   option.attr('value', this.strikePrice).text(this.strikePrice);
-                  $('#strike_1').append(option);
+                  $('#strike_0').append(option);
                }
                strikePremium[this.type+this.strikePrice] = this.lastPrice; 
              
@@ -100,10 +103,10 @@
         });
     });
 
-     $('#strike_1').change(function() 
+     $('#strike_0').change(function() 
     {
-      var premium = strikePremium[$('#type_1').val()+$(this).attr('value')];
-      $('#premium_1').val(premium);   
+      var premium = strikePremium[$('#type_0').val()+$(this).attr('value')];
+      $('#premium_0').val(premium);   
     });
 
     $('#subbtn').click(function(event) {
@@ -133,6 +136,30 @@
                 }
             });
     });
+  var rowCounter=1;
+ $("#addButton").click(function(){
+
+var $tr    = $(this).closest('.tr_clone');
+var $clone = $tr.clone();
+$tr.after($clone);
+    //$(this).closest('.addr0').clone().insertAfter(".addr0");
+  /*
+         $('#addr'+rowCounter).html("<td><select name='transaction_"+rowCounter+"' id='transaction_"+rowCounter+"' class='order-type'><option value=''>- -</option><option value='BUY'>Buy</option><option value='SELL'>Sell</option></select></td><td><input type='text' value='' name='contracts_"+rowCounter+"' id='contracts_"+rowCounter+"' style='width:100%;height:100%''> </td><td><select width='100%'' class='type osi-option-type' name='type_"+rowCounter+"' id='type_"+rowCounter+"' tabindex='8'><option>- -</option><option value='C'>Call</option><option value='P'>Put</option></select></td><td><select name='expiration_"+rowCounter+"' id='expiration_"+rowCounter+"' class='expiration' tabindex='9'><option value=''>-------</option></select></td><td><select width='100%' name='strike_"+rowCounter+"' id='strike_"+rowCounter+"' class='strike' tabindex='4'><option value=''>-----</option></td><td><input type='text' value='' name='premium_"+rowCounter+"' id='premium_"+rowCounter+"' style='width:100%;height:100%''></td><td></td>");
+        $('#positionsTable').append('<tr id="addr'+(rowCounter+1)+'"></tr>');
+        $('#expiration_'+(rowCounter-1).clone(true).appendTo('');
+   
+      for(var expirationsIndex=0; expirationsIndex < expirationsArray.length;expirationsIndex++)
+      {
+           var option = $('<option />');
+           option.attr('value', expirationsArray[expirationsIndex]).text(expirationsArray[expirationsIndex]);
+           console.log(option);
+        $('#expiration_'+rowCounter).append(option);
+     
+      }
+      */
+   
+        rowCounter++; 
+    });
 
 });
 </script>
@@ -157,7 +184,7 @@
   	<br/>
   	<div class="row">
       <div class="col-xs-12 col-sm-8 col-md-6 col-sm-offset-2 col-md-offset-3" align="center">
-      <table class="table">
+      <table class="table" id="positionsTable">
       <tr>
          <td><b>Order Type</b></td>
          <td><b>Contracts</b></td>
@@ -167,22 +194,23 @@
          <td><b>Premium</b></td>
          <td></td>
       </tr>
-      <tr>
-        <td><select width="100%" name="transaction_1" id="transaction_1" class="order-type" tabindex="6"><option value="">- -</option><option value="BUY">Buy</option><option value="SELL">Sell</option></select></td>
+      <tr id="addr0" class="tr_clone">
+        <td><select width="100%" name="transaction_0" id="transaction_0" class="order-type" tabindex="6"><option value="">- -</option><option value="BUY">Buy</option><option value="SELL">Sell</option></select></td>
           <td>
-            <input type="text"  value="" name="contracts_1" id="contracts_1" style="width:100%;height:100%"> 
+            <input type="text"  value="" name="contracts_0" id="contracts_0" style="width:100%;height:100%"> 
           </td>
         
-        <td><select width="100%" class="type osi-option-type" name="type_1"  id="type_1" tabindex="8"><option>- -</option><option value="C">Call</option><option value="P">Put</option></select></td>
-        <td><select name="expiration_1" id="expiration_1" class="expiration" tabindex="9"><option value="">-------</option></select></td>
-        <td><select width="100%" name="strike_1" id="strike_1" class="strike" tabindex="4"><option value="">-----</option></td>
+        <td><select width="100%" class="type osi-option-type" name="type_0"  id="type_0" tabindex="8"><option>- -</option><option value="C">Call</option><option value="P">Put</option></select></td>
+        <td><select name="expiration_0" id="expiration_0" class="expiration" tabindex="9"><option value="">-------</option></select></td>
+        <td><select width="100%" name="strike_0" id="strike_0" class="strike" tabindex="4"><option value="">-----</option></td>
         <td>
-          <input type="text" value="" name="premium_1" id="premium_1" style="width:100%;height:100%">
+          <input type="text" value="" name="premium_0" id="premium_0" style="width:100%;height:100%">
         </td>
         <td>
-          <input class="btn-mini btn-primary" type="button" id="addmorePOIbutton" value="Add"  onclick="insRow()"/>
+          <input class="btn-mini btn-primary" type="button" id="addButton" value="Add"/>
         </td>
       </tr>
+     
      </table>
      </div>
     </div>
