@@ -82,31 +82,94 @@
   
     var strikePremium = {};
 
-    $('.expiration').change(function() 
-    {
-       //alert('Value change to ' + $(this).attr('value'));
-        $.getJSON( "getOptionChain/"+$('#ticker').val()+"/"+$(this).attr('value'), function( data ) {
+   $('#positionsTable').undelegate('.expiration').delegate('.expiration', 'change', function() {
+    // do your processing here
+       var thisType = $(this).closest('.tr_clone').find('.type').children().first().val();
+       var strikeRef = $(this).closest('.tr_clone').find('.strike').children().first();
+       var thisExpiration=$(this).attr('value');
+       var premiumRef = $(this).closest('.tr_clone').find('.premium').children().first();
+       strikeRef.html("<option value=\"\">-----</option>");
+       premiumRef.val('');
+       //console.log(thisType);
+       strikeRef.prop('disabled', 'disabled');
+       $.getJSON( "getOptionChain/"+$('#ticker').val()+"/"+$(this).attr('value'), function( data ) {
             console.log(data);
-            strikePremium = {};
+            strikeRef.removeAttr('disabled');  
+      
             $(data.chain.optionsChain.option).each(function()
             {
                //this refers to the current item being iterated over
-               if($('#type_0').val() == this.type)
+               //alert($(this).parent().siblings('#addr_0').find('#type_0').val());
+            
+               if(thisType == this.type)
                {
                   var option = $('<option />');
                   option.attr('value', this.strikePrice).text(this.strikePrice);
-                  $('#strike_0').append(option);
+                  strikeRef.append(option);
                }
-               strikePremium[this.type+this.strikePrice] = this.lastPrice; 
+               strikePremium[thisExpiration+this.type+this.strikePrice] = this.lastPrice; 
              
-           });  
-        });
-    });
+           });
 
-     $('#strike_0').change(function() 
-    {
-      var premium = strikePremium[$('#type_0').val()+$(this).attr('value')];
-      $('#premium_0').val(premium);   
+        });
+        return false;
+   });
+   
+    $('#positionsTable').undelegate('.type').delegate('.type', 'change', function() {
+    // do your processing here
+       var thisType = $(this).attr('value');
+       var thisExpiration = $(this).closest('.tr_clone').find('.expiration').children().first().val();
+       var strikeRef = $(this).closest('.tr_clone').find('.strike').children().first();
+       var premiumRef = $(this).closest('.tr_clone').find('.premium').children().first();
+    
+       //console.log(thisType);
+       strikeRef.prop('disabled', 'disabled');
+       if(thisExpiration == "" || thisType == "")
+       {
+          if(strikeRef.val() !="")
+          {
+            strikeRef.val("");
+          }
+          premiumRef.val("");
+          return false;
+       }
+       if(strikeRef.val() != "")
+      {
+         var premium = strikePremium[thisExpiration+thisType+strikeRef.val()];
+         premiumRef.val(premium);   
+         strikeRef.removeAttr('disabled');  
+       }
+      
+       $.getJSON( "getOptionChain/"+$('#ticker').val()+"/"+thisExpiration, function( data ) {
+            console.log(data);
+            strikeRef.removeAttr('disabled');  
+      
+            $(data.chain.optionsChain.option).each(function()
+            {
+               //this refers to the current item being iterated over
+               //alert($(this).parent().siblings('#addr_0').find('#type_0').val());
+            
+               if(thisType == this.type)
+               {
+                  var option = $('<option />');
+                  option.attr('value', this.strikePrice).text(this.strikePrice);
+                  strikeRef.append(option);
+               }
+               strikePremium[thisExpiration+this.type+this.strikePrice] = this.lastPrice; 
+             
+           });
+
+        });
+        return false;
+   });
+
+   $('#positionsTable').undelegate('.strike').delegate('.strike', 'change', function() {
+      var thisType = $(this).closest('.tr_clone').find('.type').children().first().val();
+      var premiumRef = $(this).closest('.tr_clone').find('.premium').children().first();
+      var thisExpiration = $(this).closest('.tr_clone').find('.expiration').children().first().val();
+      var premium = strikePremium[thisExpiration+thisType+$(this).attr('value')];
+      premiumRef.val(premium);   
+      return false;
     });
 
     $('#subbtn').click(function(event) {
@@ -139,9 +202,27 @@
   var rowCounter=1;
  $("#addButton").click(function(){
 
-var $tr    = $(this).closest('.tr_clone');
-var $clone = $tr.clone();
-$tr.after($clone);
+        var $tr = $(this).closest('.tr_clone');
+        var allTrs = $tr.closest('table').find('.tr_clone');
+        var lastTr = allTrs[allTrs.length-1];
+        var $clone = $(lastTr).clone();
+
+        $clone.find('td').each(function(){
+            var el = $(this).find(':first-child');
+            var id = el.attr('id') || null;
+            console.log(id);
+            if(id) {
+                var i = id.substr(id.length-1);
+                var prefix = id.substr(0, (id.length-1));
+                el.attr('id', prefix+(+i+1));
+                el.attr('name', prefix+(+i+1));
+            }
+        });
+
+        $clone.find('input:text').val('');
+        $clone.find('.strike').children().first().html("<option value=\"\">-----</option>");
+        $clone.find('.addButton').hide();
+        $tr.closest('table').append($clone);
     //$(this).closest('.addr0').clone().insertAfter(".addr0");
   /*
          $('#addr'+rowCounter).html("<td><select name='transaction_"+rowCounter+"' id='transaction_"+rowCounter+"' class='order-type'><option value=''>- -</option><option value='BUY'>Buy</option><option value='SELL'>Sell</option></select></td><td><input type='text' value='' name='contracts_"+rowCounter+"' id='contracts_"+rowCounter+"' style='width:100%;height:100%''> </td><td><select width='100%'' class='type osi-option-type' name='type_"+rowCounter+"' id='type_"+rowCounter+"' tabindex='8'><option>- -</option><option value='C'>Call</option><option value='P'>Put</option></select></td><td><select name='expiration_"+rowCounter+"' id='expiration_"+rowCounter+"' class='expiration' tabindex='9'><option value=''>-------</option></select></td><td><select width='100%' name='strike_"+rowCounter+"' id='strike_"+rowCounter+"' class='strike' tabindex='4'><option value=''>-----</option></td><td><input type='text' value='' name='premium_"+rowCounter+"' id='premium_"+rowCounter+"' style='width:100%;height:100%''></td><td></td>");
@@ -195,19 +276,19 @@ $tr.after($clone);
          <td></td>
       </tr>
       <tr id="addr0" class="tr_clone">
-        <td><select width="100%" name="transaction_0" id="transaction_0" class="order-type" tabindex="6"><option value="">- -</option><option value="BUY">Buy</option><option value="SELL">Sell</option></select></td>
+        <td class="transaction"><select width="100%" name="transaction_0" id="transaction_0" class="order-type" tabindex="6"><option value="">- -</option><option value="BUY">Buy</option><option value="SELL">Sell</option></select></td>
           <td>
             <input type="text"  value="" name="contracts_0" id="contracts_0" style="width:100%;height:100%"> 
           </td>
         
-        <td><select width="100%" class="type osi-option-type" name="type_0"  id="type_0" tabindex="8"><option>- -</option><option value="C">Call</option><option value="P">Put</option></select></td>
-        <td><select name="expiration_0" id="expiration_0" class="expiration" tabindex="9"><option value="">-------</option></select></td>
-        <td><select width="100%" name="strike_0" id="strike_0" class="strike" tabindex="4"><option value="">-----</option></td>
-        <td>
+        <td class="type"><select width="100%" class="type osi-option-type" name="type_0"  id="type_0" tabindex="8"><option value="">- -</option><option value="C">Call</option><option value="P">Put</option></select></td>
+        <td class="expiration"><select name="expiration_0" id="expiration_0" class="expiration" tabindex="9"><option value="">-------</option></select></td>
+        <td class="strike"><select width="100%" name="strike_0" id="strike_0" class="strike" tabindex="4"><option value="">-----</option></td>
+        <td class="premium">
           <input type="text" value="" name="premium_0" id="premium_0" style="width:100%;height:100%">
         </td>
         <td>
-          <input class="btn-mini btn-primary" type="button" id="addButton" value="Add"/>
+          <input class="addButton" type="button" id="addButton" value="Add"/>
         </td>
       </tr>
      
