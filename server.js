@@ -7,8 +7,8 @@ var util = require('util'),
 port=8080;
 
 
-app.get('/', function(req, res) {
-    res.send([{name:'2014-03'}, {name:'2014-04'}]);
+app.get('/', function(req, res){
+    res.sendfile('strategy.html', { root: __dirname} );
 });
 
 app.get('/index', services.findById);
