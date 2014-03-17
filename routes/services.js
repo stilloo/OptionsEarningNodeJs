@@ -98,37 +98,90 @@ exports.getPnL  = function(req, res) {
         //for(var i=0;i<data.options.length;i++){
          //var opt = data.options[i].option;
           var opt=data;
-         stockPrice = +opt.stockPrice;
-         var ticker = opt.ticker;
-         var strike = +opt.strike_0;
-         var price = +opt.premium_0;
-         var type = opt.type_0;
-         var expiryDate=opt.expiration_0;
-         var transactionType = opt.transaction_0;
-         var contracts = +opt.contracts_0;
-         if(strike < minStrike)
-            minStrike=strike;
-	      if(strike > maxStrike)
-	        maxStrike=strike;
-         //populate object
-         optionModelList.push(new OptionsModel(ticker,strike,price,type,expiryDate,transactionType,contracts));
-         console.log(ticker);
+          var expiryDate=null;
+          var ticker=null;
+          var strike=null;
+          var price=null;
+          var type=null;
+          var transactionType=null;
+          var contracts=null;
+          for (var key in opt){
+            
+            //console.log("key " +key);
+            if(key.match("^stockPrice"))
+            {
+                stockPrice = +opt.stockPrice;   
+            }
+            else if(key.match("^expiration"))
+            {
+                 expiryDate=opt[key];
+            }
+            else if(key.match("^ticker"))
+            {
+                ticker=opt.ticker;
+            }
+            else if(key.match("^strike"))
+            {
+                strike= +opt[key];
+            }
+            else if(key.match("^premium"))
+            {
+                price= +opt[key];
+            }
+            else if(key.match("^type"))
+            {
+                type=opt[key];
+            }
+            else if(key.match("^transaction"))
+            {
+                transactionType=opt[key];
+            }
+            else if(key.match("^contracts"))
+            {
+                contracts= +opt[key];
+            }
+            if(strike !=null && strike < minStrike)
+                 minStrike=strike;
+            if(strike !=null && strike > maxStrike)
+                  maxStrike=strike;
+              //populate object
+              if(ticker !=null && strike !=null && price!=null && type !=null && expiryDate !=null && transactionType !=null && contracts !=null)
+              {
+                  console.log(strike);
+                  console.log(price);
+                  console.log(type);
+                  console.log(expiryDate);
+                  console.log(transactionType);
+                  console.log(contracts);
+                  optionModelList.push(new OptionsModel(ticker,strike,price,type,expiryDate,transactionType,contracts));
+                  console.log(ticker);
+                  expiryDate=null;
+                  strike=null;
+                  price=null;
+                  type=null;
+                  transactionType=null;
+                  contracts=null;
+             }
+        }
+         
+        
+         
         //}
         
         //ok option model has the list of objects now
-       
         if(maxStrike < stockPrice) maxStrike=stockPrice;
         //ok lets calculate profit
         var minPrice = minStrike/2;
         console.log("minPrice "+minPrice);
         console.log("maxStrike "+maxStrike);
+         console.log("minStrike "+minStrike);
         var maxPrice = +maxStrike + +minPrice;
         console.log("maxPrice "+maxPrice);
         var max=0,min=0;
 
         console.log(minPrice);
         console.log(maxPrice);
-	for(var i = minPrice; i <maxPrice;i=i+2)
+	   for(var i = minPrice; i <maxPrice;i=i+2)
         {
 
             var pnl = populateModelToPlot(i);
