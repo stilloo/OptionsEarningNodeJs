@@ -105,6 +105,7 @@ exports.getPnL  = function(req, res) {
           var type=null;
           var transactionType=null;
           var contracts=null;
+
           for (var key in opt){
             
             //console.log("key " +key);
@@ -153,7 +154,10 @@ exports.getPnL  = function(req, res) {
                   console.log(expiryDate);
                   console.log(transactionType);
                   console.log(contracts);
-                  optionModelList.push(new OptionsModel(ticker,strike,price,type,expiryDate,transactionType,contracts));
+                  for(var j=0;j<contracts;j++)
+                  {
+                    optionModelList.push(new OptionsModel(ticker,strike,price,type,expiryDate,transactionType,contracts));
+                  }
                   console.log(ticker);
                   expiryDate=null;
                   strike=null;
