@@ -1,10 +1,68 @@
 <!DOCTYPE html>
-
+<html>
+<head>
+  <title>Options Earning</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta property="title" content="Options earning" />
+<meta property="description" content="Create your options strategy" />
+<link rel="canonical" href="http://www.optionsearning.com/strategy.html" />
+</head>
 <link href="/public/stylesheets/bootstrap-3.1.1-dist/css/bootstrap.css" rel="stylesheet">
 <style type="text/css">
+@media
+only screen and (-webkit-min-device-pixel-ratio : 1.5),
+50
+only screen and (min-device-pixel-ratio : 1.5) {
+/* Styles */
+}
 
+@media only screen and (max-width: 480px) {
+    /* Mobile styles go here */
+    body{width:100%;}
+    img{max-width:100%;}
+}
+@media screen and (max-width: 650px) {
+
+  #header {
+    height: auto;
+  }
+
+  #searchform {
+    position: absolute;
+    top: 5px;
+    right: 0;
+  }
+
+  #main-nav {
+    position: static;
+  }
+
+  #site-logo {
+    margin: 15px 100px 5px 0;
+    position: static;
+  }
+
+  #site-description {
+    margin: 0 0 15px;
+    position: static;
+  }
+
+  #content {
+    width: auto;
+    float: none;
+    margin: 20px 0;
+  }
+
+  #sidebar {
+    width: 100%;
+    float: none;
+    margin: 0;
+  }
+
+}
 </style>
-<html>
+
 <script src="/public/javascripts/jquery-1.7.1.js"></script>
 <script src="/public/javascripts/dygraph-combined.js"></script>
 <script src="/public/javascripts/backbone-min.js"></script>
@@ -271,6 +329,7 @@
   	<br/>
   	<div class="row">
       <div class="col-xs-12 col-sm-8 col-md-6 col-sm-offset-2 col-md-offset-3" align="center">
+      <div class="table-responsive">
       <table class="table" id="positionsTable">
       <tr>
          <td><b>Order Type</b></td>
@@ -302,6 +361,7 @@
       </tr>
      
      </table>
+     </div>
      </div>
     </div>
     
