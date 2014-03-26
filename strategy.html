@@ -147,14 +147,19 @@ only screen and (min-device-pixel-ratio : 1.5) {
        var strikeRef = $(this).closest('.tr_clone').find('.strike').children().first();
        var thisExpiration=$(this).attr('value');
        var premiumRef = $(this).closest('.tr_clone').find('.premium').children().first();
+       var symbolRef = $(this).closest('.tr_clone').find('.symbol').children().first();
+
        strikeRef.html("<option value=\"\">-----</option>");
+       symbolRef.html("<option value=\"\">-----</option>");
        premiumRef.val('');
        //console.log(thisType);
        strikeRef.prop('disabled', 'disabled');
        $.getJSON( "getOptionChain/"+$('#ticker').val()+"/"+$(this).attr('value'), function( data ) {
             console.log(data);
             strikeRef.removeAttr('disabled');  
-      
+            var symbolYrMoDayArr = new Array();
+            var ticker = data.chain.optionsChain.symbol;
+            var strikeArr = new Array();
             $(data.chain.optionsChain.option).each(function()
             {
                //this refers to the current item being iterated over
@@ -162,12 +167,35 @@ only screen and (min-device-pixel-ratio : 1.5) {
             
                if(thisType == this.type)
                {
-                  var option = $('<option />');
-                  option.attr('value', this.strikePrice).text(this.strikePrice);
-                  strikeRef.append(option);
+                  if(strikeArr[this.strikePrice] != this.strikePrice)
+                  {
+                    strikeArr[this.strikePrice] = this.strikePrice;
+                    var option = $('<option />');
+                    option.attr('value', this.strikePrice).text(this.strikePrice);
+                    strikeRef.append(option);
+                  }
                }
-               strikePremium[thisExpiration+this.type+this.strikePrice] = this.lastPrice; 
-             
+               var symbol = this.symbol; //AAPL140419C00225000
+               var symbolYrMoDay = symbol.substring(ticker.length,ticker.length+6);
+               var symbolType = symbol.substring(ticker.length+6,ticker.length+7);
+               console.log("symbolType "+symbolType);
+               if(symbolType == thisType )
+               {
+                 if(symbolYrMoDayArr[symbolYrMoDay] != symbolYrMoDay)
+                 {
+                   symbolYrMoDayArr[symbolYrMoDay]=symbolYrMoDay;
+                   if (symbol.toLowerCase().indexOf(ticker+"7") == -1)
+                    {
+                      //symbol is not mini option
+                      //lets get expiration
+                      var option = $('<option />');
+                      option.attr('value', symbolYrMoDay).text(symbolYrMoDay);
+                      symbolRef.append(option);
+                     }
+                   }
+                }
+                 //console.log(symbol.substring(ticker.length,ticker.length+6));
+                 strikePremium[symbolYrMoDay+thisExpiration+this.type+this.strikePrice] = this.lastPrice; 
            });
 
         });
@@ -180,7 +208,8 @@ only screen and (min-device-pixel-ratio : 1.5) {
        var thisExpiration = $(this).closest('.tr_clone').find('.expiration').children().first().val();
        var strikeRef = $(this).closest('.tr_clone').find('.strike').children().first();
        var premiumRef = $(this).closest('.tr_clone').find('.premium').children().first();
-    
+       var symbolRef = $(this).closest('.tr_clone').find('.symbol').children().first();
+
        //console.log(thisType);
        strikeRef.prop('disabled', 'disabled');
        if(thisExpiration == "" || thisType == "")
@@ -192,17 +221,22 @@ only screen and (min-device-pixel-ratio : 1.5) {
           premiumRef.val("");
           return false;
        }
-       if(strikeRef.val() != "")
+       if(strikeRef.val() != "" && symbolRef.val() !="")
       {
-         var premium = strikePremium[thisExpiration+thisType+strikeRef.val()];
+         var symbolYrMoDay = symbolRef.val();
+         var premium = strikePremium[symbolYrMoDay+thisExpiration+thisType+strikeRef.val()];
          premiumRef.val(premium);   
          strikeRef.removeAttr('disabled');  
+         return false;
        }
       
        $.getJSON( "getOptionChain/"+$('#ticker').val()+"/"+thisExpiration, function( data ) {
             console.log(data);
             strikeRef.removeAttr('disabled');  
-      
+            var ticker = data.chain.optionsChain.symbol;
+            var symbolYrMoDayArr = new Array();
+            var strikeArr = new Array();
+          
             $(data.chain.optionsChain.option).each(function()
             {
                //this refers to the current item being iterated over
@@ -210,11 +244,36 @@ only screen and (min-device-pixel-ratio : 1.5) {
             
                if(thisType == this.type)
                {
-                  var option = $('<option />');
-                  option.attr('value', this.strikePrice).text(this.strikePrice);
-                  strikeRef.append(option);
+                 if(strikeArr[this.strikePrice] != this.strikePrice)
+                  {
+                    strikeArr[this.strikePrice] = this.strikePrice;
+                    var option = $('<option />');
+                    option.attr('value', this.strikePrice).text(this.strikePrice);
+                    strikeRef.append(option);
+                  }
                }
-               strikePremium[thisExpiration+this.type+this.strikePrice] = this.lastPrice; 
+               var symbol = this.symbol; //AAPL140419C00225000
+               var symbolYrMoDay = symbol.substring(ticker.length,ticker.length+6);
+                var symbolType = symbol.substring(ticker.length+6,ticker.length+7);
+               console.log("symbolType "+symbolType);
+               if(symbolType == thisType )
+               {
+                 if(symbolYrMoDayArr[symbolYrMoDay] != symbolYrMoDay)
+                 {
+                   symbolYrMoDayArr[symbolYrMoDay]=symbolYrMoDay;
+                   if (symbol.toLowerCase().indexOf(ticker+"7") == -1)
+                    {
+                      //symbol is not mini option
+                      //lets get expiration
+                      var option = $('<option />');
+                      option.attr('value', symbolYrMoDay).text(symbolYrMoDay);
+                      symbolRef.append(option);
+                      //console.log(symbol.substring(ticker.length,ticker.length+6));
+                    }
+                 }
+              }
+               strikePremium[symbolYrMoDay+thisExpiration+this.type+this.strikePrice] = this.lastPrice; 
+               
              
            });
 
@@ -222,11 +281,42 @@ only screen and (min-device-pixel-ratio : 1.5) {
         return false;
    });
 
+$('#positionsTable').undelegate('.symbol').delegate('.symbol', 'change', function() {
+    // do your processing here
+       var symbolRef = $(this).attr('value');
+       var thisExpiration = $(this).closest('.tr_clone').find('.expiration').children().first().val();
+       var strikeRef = $(this).closest('.tr_clone').find('.strike').children().first();
+       var premiumRef = $(this).closest('.tr_clone').find('.premium').children().first();
+       var thisType = $(this).closest('.tr_clone').find('.type').children().first().val();
+
+       //console.log(thisType);
+     //  strikeRef.prop('disabled', 'disabled');
+       if(thisExpiration == "" || thisType == "" )
+       {
+          if(strikeRef.val() !="")
+          {
+            strikeRef.val("");
+          }
+          premiumRef.val("");
+          return false;
+       }
+       if(strikeRef.val() != "" && symbolRef !="")
+      {
+         var premium = strikePremium[symbolRef+thisExpiration+thisType+strikeRef.val()];
+         premiumRef.val(premium);   
+       //  strikeRef.removeAttr('disabled');  
+       }
+       return false;
+   });
+
    $('#positionsTable').undelegate('.strike').delegate('.strike', 'change', function() {
       var thisType = $(this).closest('.tr_clone').find('.type').children().first().val();
       var premiumRef = $(this).closest('.tr_clone').find('.premium').children().first();
       var thisExpiration = $(this).closest('.tr_clone').find('.expiration').children().first().val();
-      var premium = strikePremium[thisExpiration+thisType+$(this).attr('value')];
+      var symbolRefVal = $(this).closest('.tr_clone').find('.symbol').children().first().val();
+      var ticker = $('#ticker').val();
+    //  var symbolYrMoDay = symbolRefVal.substring(ticker.length,ticker.length+6);
+      var premium = strikePremium[symbolRefVal + thisExpiration+thisType+$(this).attr('value')];
       premiumRef.val(premium);   
       return false;
     });
@@ -332,10 +422,11 @@ only screen and (min-device-pixel-ratio : 1.5) {
       <div class="table-responsive">
       <table class="table" id="positionsTable">
       <tr>
-         <td><b>Order Type</b></td>
+         <td><b>Order</b></td>
          <td><b>Contracts</b></td>
          <td><b>Type</b></td> 
          <td><b>Expiration</b></td>
+         <td><b>End Date</b></td>
          <td><b>Strike</b></td>
          <td><b>Premium</b></td>
          <td></td>
@@ -348,6 +439,7 @@ only screen and (min-device-pixel-ratio : 1.5) {
         
         <td class="type"><select width="100%" class="type osi-option-type" name="type_0"  id="type_0" tabindex="8"><option value="">- -</option><option value="C">Call</option><option value="P">Put</option></select></td>
         <td class="expiration"><select name="expiration_0" id="expiration_0" class="expiration" tabindex="9"><option value="">-------</option></select></td>
+        <td class="symbol"><select name="symbol_0" id="symbol_0" class="symbol" tabindex="9"><option value="">-------</option></select></td>
         <td class="strike"><select width="100%" name="strike_0" id="strike_0" class="strike" tabindex="4"><option value="">-----</option></td>
         <td class="premium">
           <input type="text" value="" name="premium_0" id="premium_0" style="width:100%;height:100%">
