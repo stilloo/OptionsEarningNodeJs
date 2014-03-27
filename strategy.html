@@ -153,9 +153,11 @@ only screen and (min-device-pixel-ratio : 1.5) {
        symbolRef.html("<option value=\"\">-----</option>");
        premiumRef.val('');
        //console.log(thisType);
+       symbolRef.prop('disabled','disabled');
        strikeRef.prop('disabled', 'disabled');
        $.getJSON( "getOptionChain/"+$('#ticker').val()+"/"+$(this).attr('value'), function( data ) {
             console.log(data);
+            symbolRef.removeAttr('disabled');
             strikeRef.removeAttr('disabled');  
             var symbolYrMoDayArr = new Array();
             var ticker = data.chain.optionsChain.symbol;
@@ -211,6 +213,7 @@ only screen and (min-device-pixel-ratio : 1.5) {
        var symbolRef = $(this).closest('.tr_clone').find('.symbol').children().first();
 
        //console.log(thisType);
+       symbolRef.prop('disabled','disabled');
        strikeRef.prop('disabled', 'disabled');
        if(thisExpiration == "" || thisType == "")
        {
@@ -221,17 +224,20 @@ only screen and (min-device-pixel-ratio : 1.5) {
           premiumRef.val("");
           return false;
        }
+
        if(strikeRef.val() != "" && symbolRef.val() !="")
       {
          var symbolYrMoDay = symbolRef.val();
          var premium = strikePremium[symbolYrMoDay+thisExpiration+thisType+strikeRef.val()];
          premiumRef.val(premium);   
+         symbolRef.removeAttr('disabled');  
          strikeRef.removeAttr('disabled');  
          return false;
        }
       
        $.getJSON( "getOptionChain/"+$('#ticker').val()+"/"+thisExpiration, function( data ) {
             console.log(data);
+            symbolRef.removeAttr('disabled');  
             strikeRef.removeAttr('disabled');  
             var ticker = data.chain.optionsChain.symbol;
             var symbolYrMoDayArr = new Array();
@@ -486,7 +492,7 @@ $('#positionsTable').undelegate('.symbol').delegate('.symbol', 'change', functio
     <br/>
    <div class="row"> 
       <div class="col-md-6 col-lg-6 col-md-offset-3" align="center">
-         <div id="graph"></div>
+         <div id="graph"  style="width:600px; height:300px;"></div>
       </div>
     </div> 
   <!--
