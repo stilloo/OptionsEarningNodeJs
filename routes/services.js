@@ -1,48 +1,67 @@
 
 var YQL=require('yqlp/lib/yql');
 var util=require('util');
+var http = require('http');
 
 exports.findByPrice= function(req, res) {
-  YQL.exec(" SELECT * FROM yahoo.finance.quotes WHERE symbol='"+req.params.ticker+"'", function(error, response) {
-        if (error) {
-                console.log('Ut oh! Example #1 has messed up:', error);
-        } else {
-               // console.log(response);
-                var quote = response.query.results.quote.Ask;
-                if(quote == null || quote == '')
-                {
-                    quote = response.query.results.quote.AskRealtime;
-                
-                    if(quote == null || quote == 0.00 || quote == '' || quote == 0)
-                        {
-                        quote = response.query.results.quote.LastTradePriceOnly;
-                        }
-                }
-                res.send({"stockPrice":quote});
-    }
-    });
+    var options = {
+      host: "localhost",
+      port: 8090,
+      path: "/optionsservice/webapi/optionsresource/quotes/"+req.params.ticker,
+      method: 'GET'
+    };
+var responseString = '';
+    http.request(options, function(response) {
+     
+      response.on('data', function (chunk) {
+            responseString+=chunk;
+           console.log(responseString);
+           var responseObject = JSON.parse(responseString);
+        res.send({"stockPrice":responseObject});
+      });
+    }).end();
+
+  
 };
 
 exports.findById = function(req, res) {
-    YQL.exec(" SELECT contract FROM yahoo.finance.option_contracts WHERE symbol='"+req.params.ticker+"'", function(error, response) {
-        if (error) {
-                console.log('Ut oh! Example #1 has messed up:', error);
-                    } else {
-                            var results = response.query.results;
-        res.send({"expirations":results});
-    }
-    });
+    var options = {
+      host: "localhost",
+      port: 8090,
+      path: "/optionsservice/webapi/optionsresource/expirations/"+req.params.ticker,
+      method: 'GET'
+    };
+var responseString = '';
+    http.request(options, function(response) {
+     
+      response.on('data', function (chunk) {
+            responseString+=chunk;
+           console.log(responseString);
+           var responseObject = JSON.parse(responseString);
+        res.send({"expirations":responseObject});
+      });
+    }).end();
+
 };
 
 exports.getOptionChain  = function(req, res) {
-    YQL.exec(" SELECT * FROM yahoo.finance.options WHERE symbol='"+req.params.ticker+"' and expiration='"+req.params.expiration+"'", function(error, response) {
-        if (error) {
-                console.log('Ut oh! Example #1 has messed up:', error);
-                    } else {
-                            var results = response.query.results;
-        res.send({"chain":results});
-    }
-    });
+    var options = {
+      host: "localhost",
+      port: 8090,
+      path: "/optionsservice/webapi/optionsresource/optionschain/"+req.params.ticker+"/"+req.params.expiration,
+      method: 'GET'
+    };
+var responseString = '';
+    http.request(options, function(response) {
+     
+      response.on('data', function (chunk) {
+            responseString+=chunk;
+           console.log(responseString);
+           var responseObject = JSON.parse(responseString);
+        res.send({"chain":responseObject});
+      });
+    }).end();
+
 };
 
 function OptionsModel (ticker,strikePrice, optionPremium, optionType, optionDate, transactionType, contracts) {
@@ -187,6 +206,7 @@ exports.getPnL  = function(req, res) {
         console.log(maxPrice);
 	   for(var i = minPrice; i <maxPrice;i=i+2)
         {
+
 
             var pnl = populateModelToPlot(i);
             if(pnl < min) min = pnl;
